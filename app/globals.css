@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  /* Warm dusk/sunrise palette — deep navy sky, warm amber/gold near the top,
+     pine green + cream accents. This is the app's one fixed look, not a
+     light/dark theme pair. */
+  --color-navy-deep: #0c1224;
+  --color-navy: #16213e;
+  --color-dusk: #3a3d6b;
+  --color-amber: #f2994a;
+  --color-gold: #f6c453;
+  --color-gold-dim: #6b6247;
+  --color-pine: #2f5d4f;
+  --color-pine-light: #4f8a72;
+  --color-cream: #f8ecd9;
+  --color-ember: #e2703a;
+  --color-slate: #8a92b2;
+}
+
+@theme inline {
+  --color-navy-deep: var(--color-navy-deep);
+  --color-navy: var(--color-navy);
+  --color-dusk: var(--color-dusk);
+  --color-amber: var(--color-amber);
+  --color-gold: var(--color-gold);
+  --color-gold-dim: var(--color-gold-dim);
+  --color-pine: var(--color-pine);
+  --color-pine-light: var(--color-pine-light);
+  --color-cream: var(--color-cream);
+  --color-ember: var(--color-ember);
+  --color-slate: var(--color-slate);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-navy-deep) 0%,
+    var(--color-navy) 55%,
+    var(--color-dusk) 100%
+  );
+  /* Explicit no-repeat + size-to-content: without this, a page taller than
+     one viewport can make the gradient tile, showing hard seams instead of
+     one continuous fade from top of the page to the bottom. */
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  color: var(--color-cream);
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1785755190551,
+      "tag": "0000_windy_demogoblin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1785773733659,
+      "tag": "0001_reshape_camps_and_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785783157356,
+      "tag": "0002_separate_summit",
+      "breakpoints": true
+    }
+  ]
+}
