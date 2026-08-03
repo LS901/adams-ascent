@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Climb, Milestone } from "../lib/db/schema";
 import { completeOnboarding } from "../actions/climbs";
@@ -23,18 +23,27 @@ type TaskDraft = {
   campTempId: string;
 };
 
-let tempIdCounter = 0;
 function nextTempId(): string {
-  tempIdCounter += 1;
-  return `tmp-${tempIdCounter}`;
+  // crypto.randomUUID (not a page-lifetime counter) so ids restored from a
+  // localStorage draft after a refresh never collide with ones minted fresh
+  // in the new page load.
+  return crypto.randomUUID();
 }
 
 type Step = "welcome" | "camps" | "tasks";
+
+type Draft = {
+  step: Step;
+  camps: CampDraft[];
+  summit: CampDraft;
+  tasksDraft: TaskDraft[];
+};
 
 export function OnboardingWizard({ climb, initialMilestones, isFirstEverClimb }: OnboardingWizardProps) {
   const router = useRouter();
   const initialCamps = initialMilestones.filter((m) => !m.isSummit).sort((a, b) => a.position - b.position);
   const initialSummit = initialMilestones.find((m) => m.isSummit) ?? null;
+  const storageKey = `adams-ascent-onboarding-draft-${climb.id}`;
 
   const [step, setStep] = useState<Step>("welcome");
   const [camps, setCamps] = useState<CampDraft[]>(
@@ -47,6 +56,42 @@ export function OnboardingWizard({ climb, initialMilestones, isFirstEverClimb }:
   }));
   const [tasksDraft, setTasksDraft] = useState<TaskDraft[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [hasRestored, setHasRestored] = useState(false);
+
+  // Restore whatever Adam had typed before a refresh wiped React state —
+  // this only touches state once, after mount, so it can't cause a
+  // server/client hydration mismatch.
+  useEffect(() => {
+    // Restoring from localStorage on mount is exactly the "sync with an
+    // external system" case react-hooks/set-state-in-effect exists for — it
+    // can't be done in a useState initializer instead without a
+    // server/client hydration mismatch, since localStorage doesn't exist
+    // during SSR.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const draft = JSON.parse(raw) as Draft;
+        setStep(draft.step);
+        setCamps(draft.camps);
+        setSummit(draft.summit);
+        setTasksDraft(draft.tasksDraft);
+      }
+    } catch {
+      // Corrupt or unreadable draft — fall back to the server-provided state.
+    }
+    setHasRestored(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save on every change, but only once the restore pass above has run —
+  // otherwise the initial render's defaults would overwrite a real draft an
+  // instant before it gets loaded.
+  useEffect(() => {
+    if (!hasRestored) return;
+    localStorage.setItem(storageKey, JSON.stringify({ step, camps, summit, tasksDraft }));
+  }, [hasRestored, storageKey, step, camps, summit, tasksDraft]);
 
   function finish(finalCamps: CampDraft[], finalSummit: CampDraft, finalTasks: TaskDraft[]) {
     const allCamps = [...finalCamps, finalSummit];
@@ -64,6 +109,7 @@ export function OnboardingWizard({ climb, initialMilestones, isFirstEverClimb }:
 
     startTransition(async () => {
       await completeOnboarding(climb.id, milestonesInput, summitInput, tasksInput);
+      localStorage.removeItem(storageKey);
       router.refresh();
     });
   }
